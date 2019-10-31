@@ -134,8 +134,10 @@ public class ClientGUI implements ActionListener {
 				//and put them in the file map
 				String response = this.getMessage(this.clientIn);
 				String[] components = response.split("\\s+");
-				for(int i = 0; i < components.length; i += 3) {
-					this.fileMap.put(components[i], components[i+1]);
+				if(components.length > 1) {
+					for(int i = 0; i < components.length; i += 3) {
+						this.fileMap.put(components[i], components[i+1]);
+					}
 				}
 				
 				//Clear the textbox, print labels and the query result.
@@ -249,7 +251,6 @@ public class ClientGUI implements ActionListener {
 		panel.add(lblHostname);
 		
 		localHost = new JTextField();
-		localHost.setText("192.168.1.1");
 		localHost.setBounds(443, 39, 86, 20);
 		panel.add(localHost);
 		localHost.setColumns(10);
