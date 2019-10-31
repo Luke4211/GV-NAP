@@ -97,6 +97,15 @@ public class ClientGUI implements ActionListener {
 		in.read(msg, 0, len);
 		return new String(msg);
     }
+	
+	private byte[] getByteMessage(InputStream in) throws Exception {
+		byte[] msgLength = new byte[4];
+		in.read(msgLength, 0, 4);
+		int len = ByteBuffer.wrap(msgLength).getInt();
+		byte[] msg = new byte[len];
+		in.read(msg, 0, len);
+		return msg;
+	}
 	void sendMessage(String send, OutputStream out) throws Exception {
 		byte[] msg = send.getBytes();
 		byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
@@ -147,15 +156,16 @@ public class ClientGUI implements ActionListener {
 				try {
 					
 					System.out.println(fname);
-					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
 					InputStream Inp2p = newSock.getInputStream();
 					OutputStream Outp2p = newSock.getOutputStream();
 					
 					this.sendMessage(fname, Outp2p);
-					byte[] fbytes = this.getMessage(Inp2p).getBytes();
+					byte[] fbytes = this.getByteMessage(Inp2p);
 					
 					FileOutputStream fout = new FileOutputStream(fname);
 					fout.write(fbytes, 0, fbytes.length);
+					fout.flush();
 					fout.close();
 					newSock.close();
 				} catch (Exception e) {

@@ -54,8 +54,8 @@ public class HostServer {
         }
         //Send a message to the client. See Server.java for
         //specifics. 
-        private void sendMessage(String send) throws Exception {
-    		byte[] msg = send.getBytes();
+        private void sendMessage(byte[] msg) throws Exception {
+    		//byte[] msg = send.getBytes();
     		byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
     		this.serverOut.write(msgLen, 0, 4);
     		this.serverOut.write(msg, 0, msg.length);
@@ -74,7 +74,8 @@ public class HostServer {
 					InputStream fin = new FileInputStream(send);
 					byte[] fbytes = new byte[(int)send.length()];
 					fin.read(fbytes, 0, (int)send.length());
-					this.sendMessage(new String(fbytes));
+					fin.close();
+					this.sendMessage(fbytes);
 				} catch (Exception e) {					
 					e.printStackTrace();
 				}
