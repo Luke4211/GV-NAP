@@ -37,7 +37,8 @@ public class ClientGUI implements ActionListener {
 	private OutputStream clientOut;
 	private InputStream clientIn;
 	private JTextArea searchArea;
-	private HashMap<String, String> fileMap = new HashMap<String, String>();
+	private JTextArea terminal;
+	private HashMap<String, String> fileMap;
 	private JTextField cmdField;
 
 	/**
@@ -63,6 +64,7 @@ public class ClientGUI implements ActionListener {
 			this.sock = new Socket(serverHost, port);
 			this.clientOut = sock.getOutputStream();
 			this.clientIn = sock.getInputStream();
+			fileMap = new HashMap<String, String>();
 			
 			//Send username, IP, and connection speed to host.
 			String hostInfo = username + ":" + clientHost + ":" + speed;
@@ -81,6 +83,7 @@ public class ClientGUI implements ActionListener {
 			this.sendMessage(fileStr, this.clientOut);
 			this.cntBtn.setEnabled(false);
 			this.dscBtn.setEnabled(true);
+			this.terminal.append(">>Connected.\n");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -112,6 +115,7 @@ public class ClientGUI implements ActionListener {
 			String user = String.valueOf(this.username.getText());
 			String speed = String.valueOf(this.speed.getSelectedItem());
 			this.connect(ip, clientHost, port, user, speed);
+			
 		} else if(event.getSource() == this.btnSearch) {
 			try {
 				
@@ -141,6 +145,7 @@ public class ClientGUI implements ActionListener {
 			String fnameOwner = this.cmdField.getText().split(" ")[1];
 			if(this.fileMap.containsKey(fnameOwner)) {
 				try {
+					
 					System.out.println(fname);
 					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
 					InputStream Inp2p = newSock.getInputStream();
@@ -159,6 +164,19 @@ public class ClientGUI implements ActionListener {
 				
 				
 			}
+		} else if(event.getSource() == this.dscBtn) {
+			try {
+				this.sendMessage("disc", this.clientOut);
+				this.searchArea.setText("");
+				this.terminal.append(">>Disconnected.\n");
+				this.cntBtn.setEnabled(true);
+				this.dscBtn.setEnabled(false);
+				this.sock.close();
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
 		}
 		
 	}
@@ -243,6 +261,7 @@ public class ClientGUI implements ActionListener {
 		
 		dscBtn = new JButton("Disconnect");
 		dscBtn.setEnabled(false);
+		dscBtn.addActionListener(this);
 		dscBtn.setBounds(209, 70, 106, 23);
 		panel.add(dscBtn);
 		
@@ -290,10 +309,6 @@ public class ClientGUI implements ActionListener {
 		frame.getContentPane().add(panel_3);
 		panel_3.setLayout(null);
 		
-		JTextPane textPane = new JTextPane();
-		textPane.setBounds(10, 11, 473, 109);
-		panel_3.add(textPane);
-		
 		JLabel lblEnterCommand = new JLabel("Enter Command: ");
 		lblEnterCommand.setBounds(10, 135, 83, 14);
 		panel_3.add(lblEnterCommand);
@@ -307,5 +322,12 @@ public class ClientGUI implements ActionListener {
 		cmdField.setBounds(93, 132, 86, 20);
 		panel_3.add(cmdField);
 		cmdField.setColumns(10);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(10, 11, 525, 113);
+		panel_3.add(scrollPane_1);
+		
+		terminal = new JTextArea();
+		scrollPane_1.setViewportView(terminal);
 	}
 }

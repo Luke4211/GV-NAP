@@ -33,6 +33,7 @@ public class Server {
         private String userName;
         private String speed;
         private ConcurrentNavigableMap<String, String[]> availableFiles;
+        private ArrayList<String> clientFiles;
 
 
         
@@ -41,6 +42,7 @@ public class Server {
             this.serverIn = socket.getInputStream();
             this.serverOut = socket.getOutputStream();
             this.availableFiles = fileMap;
+            this.clientFiles = new ArrayList<String>();
         }
         
         //Once a new thread is spawned, read in information
@@ -93,6 +95,15 @@ public class Server {
         	        	
         	        	this.sendMessage(result);
         	        	break;
+        			case "disc":
+        				connected = false;
+        				for(String file : this.clientFiles) {
+        					this.availableFiles.remove(file);
+        				}
+        				this.socket.close();
+        				System.out.println("Client " + this.userName + " has disconnected.");
+        				
+        				break;
         			
         		}
         	}
@@ -118,6 +129,8 @@ public class Server {
         	String[] fileList = files.split("<SEP>");
         	for(String s : fileList) {
         		this.availableFiles.put(s + "/" + this.userName, userData);
+        		this.clientFiles.add(s + "/" + this.userName);
+        		
         	}
     		
     		
