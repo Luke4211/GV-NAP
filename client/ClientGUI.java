@@ -149,7 +149,7 @@ public class ClientGUI implements ActionListener {
 					this.sendMessage(fname, Outp2p);
 					byte[] fbytes = this.getMessage(Inp2p).getBytes();
 					
-					FileOutputStream fout = new FileOutputStream(fname + "2");
+					FileOutputStream fout = new FileOutputStream(fname);
 					fout.write(fbytes, 0, fbytes.length);
 					fout.close();
 					newSock.close();
