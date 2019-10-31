@@ -2,31 +2,21 @@ package client;
 
 import java.awt.EventQueue;
 import java.awt.Font;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JToggleButton;
-
-
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
-import java.awt.image.ComponentSampleModel;
 import java.awt.event.ActionEvent;
-import javax.swing.JTable;
 import javax.swing.JTextPane;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.io.*;
 import javax.swing.JTextArea;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import java.awt.SystemColor;
 
@@ -49,7 +39,6 @@ public class ClientGUI implements ActionListener {
 	private JTextArea searchArea;
 	private HashMap<String, String> fileMap = new HashMap<String, String>();
 	private JTextField cmdField;
-	private String user;
 
 	/**
 	 * Launch the application.
@@ -67,15 +56,20 @@ public class ClientGUI implements ActionListener {
 		});
 	}
 	
-	void connect(String serverHost, String clientHost, int port, String username, String speed) {
+	//Connect to server, send it client information
+	//as well as directory contents. 
+	private void connect(String serverHost, String clientHost, int port, String username, String speed) {
 		try {
 			this.sock = new Socket(serverHost, port);
 			this.clientOut = sock.getOutputStream();
 			this.clientIn = sock.getInputStream();
-			this.user = username;
-			String hostInfo = username + ":" + clientHost + ":" + speed;
 			
+			//Send username, IP, and connection speed to host.
+			String hostInfo = username + ":" + clientHost + ":" + speed;
 			this.sendMessage(hostInfo, this.clientOut);
+			
+			//Read filenames into a string separated by
+			//<SEP>, and send to host.
 			File dir = new File(System.getProperty("user.dir"));
 			File[] files = dir.listFiles();
 			String fileStr = "";
@@ -109,6 +103,9 @@ public class ClientGUI implements ActionListener {
 	
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource() == this.cntBtn ) {
+			
+			//Read in connections details from the GUI,
+			//and then pass them to connect()
 			String ip = String.valueOf(this.serverHost.getText());
 			String clientHost = String.valueOf(this.localHost.getText());
 			int port = Integer.parseInt(this.port.getText());
@@ -117,13 +114,19 @@ public class ClientGUI implements ActionListener {
 			this.connect(ip, clientHost, port, user, speed);
 		} else if(event.getSource() == this.btnSearch) {
 			try {
+				
+				//Send search command to server
 				this.sendMessage("search " + this.searchField.getText(), this.clientOut);
+				
+				//Read server response, split it on any sequence of whitespace,
+				//and put them in the file map
 				String response = this.getMessage(this.clientIn);
 				String[] components = response.split("\\s+");
 				for(int i = 0; i < components.length; i += 3) {
 					this.fileMap.put(components[i], components[i+1]);
 				}
 				
+				//Clear the textbox, print labels and the query result.
 				String cols = String.format("%-35.35s %-15.15s %-10.10s\n", "Filename/Owner", "Hostname", "Speed");
 				this.searchArea.setText("");
 				this.searchArea.append(cols);
@@ -146,7 +149,7 @@ public class ClientGUI implements ActionListener {
 					this.sendMessage(fname, Outp2p);
 					byte[] fbytes = this.getMessage(Inp2p).getBytes();
 					
-					FileOutputStream fout = new FileOutputStream("2" + fname);
+					FileOutputStream fout = new FileOutputStream(fname);
 					fout.write(fbytes, 0, fbytes.length);
 					fout.close();
 					newSock.close();

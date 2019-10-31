@@ -43,14 +43,75 @@ public class Server {
             this.availableFiles = fileMap;
         }
         
+        //Once a new thread is spawned, read in information
+        //about the client. Then read in it's directory
+        //contents, and go to listen() to wait for further
+        //instructions
+        @Override
+        public void run() {
+        		String infoString;
+				try {
+					infoString = this.getMessage();
+					String[] attributes = infoString.split(":");
+	        		this.userName = attributes[0];
+	        		this.hostname = attributes[1];
+	        		this.speed = attributes[2];
+	        		System.out.println("Client " + this.userName + " has connected.");
+	        		this.fetchFiles();	 
+	        		this.listen();
+				} catch (Exception e) {					
+					e.printStackTrace();
+				}
+        	
+        }
+        
+        //Listen to the client to either request
+        //a search of the client pool's directory, 
+        //or to quit (TODO)
+        private void listen() throws Exception {
+        	boolean connected = true;
+        	while(connected) {
+        		String cmd = this.getMessage();
+        		String[] words = cmd.split(" ");
+        		
+        		switch(words[0]) {
+        			case "search":
+        				String result = "";
+        				String prefix;
+        				
+        				if(words.length < 2) {
+        					prefix = "";
+        				} else {
+        					prefix = words[1];
+        				}
+        				
+        				//Append each matching search result to result,
+        				//and format it to ensure proper spacing.
+        	        	for(Map.Entry<String, String[]> entry : this.search(this.availableFiles, prefix).entrySet()) {
+        	        		result += String.format("%-35.35s %-15.15s %-10.10s \n ", entry.getKey(), entry.getValue()[1], entry.getValue()[2]);		
+        	        	}
+        	        	
+        	        	this.sendMessage(result);
+        	        	break;
+        			
+        		}
+        	}
+        }
+        
+        //Returns a submap of the available files based on
+        //a search term.
         private ConcurrentNavigableMap<String, String[]> search(ConcurrentNavigableMap<String, String[]> map, String prefix) {
         	if(prefix.length() > 0) {
+        		
+        		//Return a submap whose keys are in the range
+        		//between prefix and the highest unicode character.
                 return map.subMap(prefix, prefix + '\uffff');
         	}
         	return map;
         }
 
-        
+        //Read in the contents of the client's directory,
+        //and add it to the map of available files.
         private void fetchFiles() throws Exception {
         	String[] userData = {userName, hostname, speed};
         	String files = this.getMessage();
@@ -62,65 +123,38 @@ public class Server {
     		
         }
         
+        //Read a message from the client, and return
+        //it as a string.
         private String getMessage() throws Exception {
+        	//First read a 32 bit integer indicating
+        	//how many bytes to read for the message.
         	byte[] msgLength = new byte[4];
     		this.serverIn.read(msgLength, 0, 4);
     		int len = ByteBuffer.wrap(msgLength).getInt();
+    		
+    		//Next read len bytes of data and return it
+    		//as a string.
     		byte[] msg = new byte[len];
     		this.serverIn.read(msg, 0, len);
     		return new String(msg);
         }
         
-        void sendMessage(String send) throws Exception {
+        //Write a message to the client
+        private void sendMessage(String send) throws Exception {
+        	//In the same manner as getMessage(),
+        	//send a 32 bit integer representing
+        	//how many bytes to read for the message
     		byte[] msg = send.getBytes();
     		byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
     		this.serverOut.write(msgLen, 0, 4);
+    		
+    		//Next write the message.
     		this.serverOut.write(msg, 0, msg.length);
     	}
 
-        @Override
-        public void run() {
-        		String infoString;
-				try {
-					infoString = this.getMessage();
-					String[] attributes = infoString.split(":");
-	        		this.userName = attributes[0];
-	        		this.hostname = attributes[1];
-	        		this.speed = attributes[2];
-	        		this.fetchFiles();	
-	        		this.listen();
-				} catch (Exception e) {					
-					e.printStackTrace();
-				}
-        	
-        }
+
         
-        private void listen() throws Exception {
-        	boolean connected = true;
-        	while(connected) {
-        		String cmd = this.getMessage();
-        		String[] words = cmd.split(" ");
-        		
-        		switch(words[0]) {
-        			case "search":
-        				String result = "";
-        				String prefix;
-        				if(words.length < 2) {
-        					prefix = "";
-        				} else {
-        					prefix = words[1];
-        				}
-        				
-        	        	for(Map.Entry<String, String[]> entry : this.search(this.availableFiles, prefix).entrySet()) {
-        	        		result += String.format("%-35.35s %-15.15s %-10.10s \n ", entry.getKey(), entry.getValue()[1], entry.getValue()[2]);		
-        	        	}
-        	        	
-        	        	this.sendMessage(result);
-        	        	break;
-        			
-        		}
-        	}
-        } 
+ 
     
     }
 }

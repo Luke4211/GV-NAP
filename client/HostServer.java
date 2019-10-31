@@ -41,7 +41,9 @@ public class HostServer {
             this.serverIn = socket.getInputStream();
             this.serverOut = socket.getOutputStream();
         }
-              
+        
+        //Read a message from the client, and return
+        //it as a string. See Server.java for specifics
         private String getMessage() throws Exception {
         	byte[] msgLength = new byte[4];
     		this.serverIn.read(msgLength, 0, 4);
@@ -50,18 +52,23 @@ public class HostServer {
     		this.serverIn.read(msg, 0, len);
     		return new String(msg);
         }
-        
-        void sendMessage(String send) throws Exception {
+        //Send a message to the client. See Server.java for
+        //specifics. 
+        private void sendMessage(String send) throws Exception {
     		byte[] msg = send.getBytes();
     		byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
     		this.serverOut.write(msgLen, 0, 4);
     		this.serverOut.write(msg, 0, msg.length);
     	}
-
+        
+        //Start function for new threads. Read
+        //in the requested filename, then convert it to
+        //a byte array and write it to the client.
         @Override
         public void run() {
         		String request;
 				try {
+					
 					request = this.getMessage();
 					File send = new File(request);
 					InputStream fin = new FileInputStream(send);
