@@ -11,7 +11,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.JTextPane;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -156,18 +155,19 @@ public class ClientGUI implements ActionListener {
 				try {
 					
 					System.out.println(fname);
-					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
-					InputStream Inp2p = newSock.getInputStream();
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
+					BufferedInputStream Inp2p = new BufferedInputStream(newSock.getInputStream());
 					OutputStream Outp2p = newSock.getOutputStream();
 					
+					//Send name of requested file to server.
 					this.sendMessage(fname, Outp2p);
 					byte[] fbytes = this.getByteMessage(Inp2p);
 					
 					FileOutputStream fout = new FileOutputStream(fname);
 					fout.write(fbytes, 0, fbytes.length);
-					fout.flush();
-					fout.close();
-					newSock.close();
+					//fout.flush();
+					//fout.close();
+					//newSock.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
