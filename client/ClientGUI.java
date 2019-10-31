@@ -13,13 +13,17 @@ import javax.swing.JTextField;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JToggleButton;
+
+
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.awt.image.ComponentSampleModel;
 import java.awt.event.ActionEvent;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.io.*;
 import javax.swing.JTextArea;
 import javax.swing.JScrollBar;
@@ -42,7 +46,9 @@ public class ClientGUI implements ActionListener {
 	private OutputStream clientOut;
 	private InputStream clientIn;
 	private JTextArea searchArea;
-	
+	private HashMap<String, String> fileMap = new HashMap<String, String>();
+	private JTextField cmdField;
+	private String user;
 
 	/**
 	 * Launch the application.
@@ -65,16 +71,10 @@ public class ClientGUI implements ActionListener {
 			this.sock = new Socket(serverHost, port);
 			this.clientOut = sock.getOutputStream();
 			this.clientIn = sock.getInputStream();
+			this.user = username;
 			String hostInfo = username + ":" + clientHost + ":" + speed;
-			/*First we send the length of the hostInfo message
-			//so the server knows how many bytes to read,
-			//and then we send hostInfo. 
-			byte[] msg = hostInfo.getBytes();
-			byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
-			this.clientOut.write(msgLen, 0, 4);
-			this.clientOut.write(msg, 0, msg.length);
-			*/
-			this.sendMessage(hostInfo);
+			
+			this.sendMessage(hostInfo, this.clientOut);
 			File dir = new File(System.getProperty("user.dir"));
 			File[] files = dir.listFiles();
 			String fileStr = "";
@@ -83,14 +83,7 @@ public class ClientGUI implements ActionListener {
 				fileStr += f.getName() + "<SEP>";
 			}
 			
-			/*Next, we send the files in the local directory
-			//in the same manner as before.
-			byte[] fileBytes = fileStr.getBytes();
-			byte[] fileLen = ByteBuffer.allocate(4).putInt(fileBytes.length).array();
-			this.clientOut.write(fileLen, 0, 4);
-			this.clientOut.write(fileBytes, 0, fileBytes.length);
-			*/
-			this.sendMessage(fileStr);
+			this.sendMessage(fileStr, this.clientOut);
 			this.cntBtn.setEnabled(false);
 			this.dscBtn.setEnabled(true);
 		} catch (Exception e) {
@@ -98,19 +91,19 @@ public class ClientGUI implements ActionListener {
 		}
 	}
 	
-	private String getMessage() throws Exception {
+	private String getMessage(InputStream in) throws Exception {
     	byte[] msgLength = new byte[4];
-		this.clientIn.read(msgLength, 0, 4);
+		in.read(msgLength, 0, 4);
 		int len = ByteBuffer.wrap(msgLength).getInt();
 		byte[] msg = new byte[len];
-		this.clientIn.read(msg, 0, len);
+		in.read(msg, 0, len);
 		return new String(msg);
     }
-	void sendMessage(String send) throws Exception {
+	void sendMessage(String send, OutputStream out) throws Exception {
 		byte[] msg = send.getBytes();
 		byte[] msgLen = ByteBuffer.allocate(4).putInt(msg.length).array();		
-		this.clientOut.write(msgLen, 0, 4);
-		this.clientOut.write(msg, 0, msg.length);
+		out.write(msgLen, 0, 4);
+		out.write(msg, 0, msg.length);
 	}
 	
 	public void actionPerformed(ActionEvent event) {
@@ -123,14 +116,47 @@ public class ClientGUI implements ActionListener {
 			this.connect(ip, clientHost, port, user, speed);
 		} else if(event.getSource() == this.btnSearch) {
 			try {
-				this.sendMessage("search " + this.searchField.getText());
-				String response = this.getMessage();
-				String cols = String.format("%-25.25s %-20.20s %-10.10s\n", "Filename", "Hostname", "Speed");
+				this.sendMessage("search " + this.searchField.getText(), this.clientOut);
+				String response = this.getMessage(this.clientIn);
+				String[] components = response.split("\\s+");
+				for(int i = 0; i < components.length; i += 3) {
+					//System.out.println(components[i] + '\n' + components[i+1].split("/")[0]);
+					this.fileMap.put(components[i], components[i+1]);
+				}
+				
+				String cols = String.format("%-35.35s %-15.15s %-10.10s\n", "Filename/Owner", "Hostname", "Speed");
 				this.searchArea.setText("");
 				this.searchArea.append(cols);
 				this.searchArea.append(response);
 			} catch(Exception e) {
 				e.printStackTrace();
+				
+			}
+		} else if(event.getSource() == this.btnSend) {
+			String[] componentStrings = this.cmdField.getText().split("/");
+			String fname = componentStrings[0].split(" ")[1];
+			System.out.println(fname);
+			if(this.fileMap.containsKey(fname + "/" + this.user)) {
+				try {
+					
+					Socket newSock = new Socket(this.fileMap.get(this.cmdField.getText().split(" ")[1]), 10000);
+					InputStream Inp2p = newSock.getInputStream();
+					OutputStream Outp2p = newSock.getOutputStream();
+					
+					
+					//String[] componentStrings = this.cmdField.getText().split("/");
+					String send = componentStrings[0];
+					this.sendMessage(fname, Outp2p);
+					byte[] fbytes = this.getMessage(Inp2p).getBytes();
+					
+					FileOutputStream fout = new FileOutputStream(fname + "2");
+					fout.write(fbytes, 0, fbytes.length);
+					fout.close();
+					newSock.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
 				
 			}
 		}
@@ -150,77 +176,77 @@ public class ClientGUI implements ActionListener {
 	 */
 	private void initialize() {
 		frame = new JFrame();
-		frame.setBounds(100, 100, 509, 550);
+		frame.setBounds(100, 100, 571, 550);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
 		JPanel panel = new JPanel();
-		panel.setBounds(0, 0, 493, 100);
+		panel.setBounds(0, 0, 545, 100);
 		frame.getContentPane().add(panel);
 		panel.setLayout(null);
 		
 		JLabel lblServerHostname = new JLabel("Server Hostname:");
-		lblServerHostname.setBounds(10, 11, 127, 14);
+		lblServerHostname.setBounds(46, 11, 127, 14);
 		panel.add(lblServerHostname);
 		
 		serverHost = new JTextField();
 		serverHost.setText("localhost");
-		serverHost.setBounds(147, 8, 141, 20);
+		serverHost.setBounds(174, 8, 141, 20);
 		panel.add(serverHost);
 		serverHost.setColumns(10);
 		
 		JLabel lblPort = new JLabel("Port:");
-		lblPort.setBounds(309, 11, 46, 14);
+		lblPort.setBounds(365, 11, 46, 14);
 		panel.add(lblPort);
 		
 		port = new JTextField();
 		port.setText("10500");
-		port.setBounds(365, 8, 86, 20);
+		port.setBounds(443, 8, 86, 20);
 		panel.add(port);
 		port.setColumns(10);
 		
 		JLabel lblUsername = new JLabel("Username:");
-		lblUsername.setBounds(10, 48, 70, 14);
+		lblUsername.setBounds(46, 39, 70, 14);
 		panel.add(lblUsername);
 		
 		username = new JTextField();
 		username.setText("gorskil");
-		username.setBounds(99, 45, 120, 20);
+		username.setBounds(169, 36, 120, 20);
 		panel.add(username);
 		username.setColumns(10);
 		
 		JLabel lblHostname = new JLabel("Hostname:");
-		lblHostname.setBounds(285, 42, 70, 14);
+		lblHostname.setBounds(365, 48, 70, 14);
 		panel.add(lblHostname);
 		
 		localHost = new JTextField();
 		localHost.setText("192.168.1.1");
-		localHost.setBounds(365, 39, 86, 20);
+		localHost.setBounds(443, 39, 86, 20);
 		panel.add(localHost);
 		localHost.setColumns(10);
 		
 		JLabel lblSpeed = new JLabel("Speed:");
-		lblSpeed.setBounds(309, 75, 46, 14);
+		lblSpeed.setBounds(365, 74, 46, 14);
 		panel.add(lblSpeed);
 		
 		speed = new JComboBox<String>();
 		speed.setModel(new DefaultComboBoxModel<String>(new String[] {"Ethernet", "T1", "T2"}));
 		speed.setSelectedIndex(0);
-		speed.setBounds(375, 71, 76, 22);
+		speed.setBounds(443, 70, 76, 22);
 		panel.add(speed);
 		
 		cntBtn = new JButton("Connect");
 		cntBtn.addActionListener(this);
-		cntBtn.setBounds(10, 76, 89, 23);
+		cntBtn.setBounds(56, 70, 89, 23);
 		panel.add(cntBtn);
 		
 		dscBtn = new JButton("Disconnect");
 		dscBtn.setEnabled(false);
-		dscBtn.setBounds(147, 76, 106, 23);
+		dscBtn.setBounds(209, 70, 106, 23);
 		panel.add(dscBtn);
 		
 		JPanel panel_1 = new JPanel();
-		panel_1.setBounds(0, 111, 493, 218);
+		panel_1.setBounds(0, 111, 545, 218);
 		frame.getContentPane().add(panel_1);
 		panel_1.setLayout(null);
 		
@@ -243,12 +269,12 @@ public class ClientGUI implements ActionListener {
 		panel_1.add(btnSearch);
 		
 		JPanel panel_2 = new JPanel();
-		panel_2.setBounds(10, 49, 473, 158);
+		panel_2.setBounds(10, 49, 525, 158);
 		panel_1.add(panel_2);
 		panel_2.setLayout(null);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 11, 453, 136);
+		scrollPane.setBounds(10, 11, 505, 136);
 		panel_2.add(scrollPane);
 		
 		searchArea = new JTextArea();
@@ -259,7 +285,7 @@ public class ClientGUI implements ActionListener {
 		
 		
 		JPanel panel_3 = new JPanel();
-		panel_3.setBounds(0, 340, 493, 160);
+		panel_3.setBounds(0, 340, 545, 160);
 		frame.getContentPane().add(panel_3);
 		panel_3.setLayout(null);
 		
@@ -273,7 +299,12 @@ public class ClientGUI implements ActionListener {
 		
 		btnSend = new JButton("Send");
 		btnSend.addActionListener(this);
-		btnSend.setBounds(103, 131, 89, 23);
+		btnSend.setBounds(210, 131, 89, 23);
 		panel_3.add(btnSend);
+		
+		cmdField = new JTextField();
+		cmdField.setBounds(93, 132, 86, 20);
+		panel_3.add(cmdField);
+		cmdField.setColumns(10);
 	}
 }

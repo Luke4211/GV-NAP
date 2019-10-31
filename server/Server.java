@@ -34,7 +34,7 @@ public class Server {
         private String speed;
         private ConcurrentNavigableMap<String, String[]> availableFiles;
 
-        
+
         
         ClientHandler(Socket socket, ConcurrentNavigableMap<String, String[]> fileMap) throws Exception {
             this.socket = socket;
@@ -56,7 +56,7 @@ public class Server {
         	String files = this.getMessage();
         	String[] fileList = files.split("<SEP>");
         	for(String s : fileList) {
-        		this.availableFiles.put(s, userData);
+        		this.availableFiles.put(s + "/" + this.userName, userData);
         	}
     		
     		
@@ -112,7 +112,7 @@ public class Server {
         				}
         				
         	        	for(Map.Entry<String, String[]> entry : this.search(this.availableFiles, prefix).entrySet()) {
-        	        		result += String.format("%-25.25s %-20.20s %-10.10s\n", entry.getKey(), entry.getValue()[1], entry.getValue()[2]);		
+        	        		result += String.format("%-35.35s %-15.15s %-10.10s \n ", entry.getKey(), entry.getValue()[1], entry.getValue()[2]);		
         	        	}
         	        	
         	        	this.sendMessage(result);
