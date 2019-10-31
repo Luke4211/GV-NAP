@@ -139,7 +139,7 @@ public class ClientGUI implements ActionListener {
 			if(this.fileMap.containsKey(fnameOwner)) {
 				try {
 					System.out.println(fname);
-					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
 					InputStream Inp2p = newSock.getInputStream();
 					OutputStream Outp2p = newSock.getOutputStream();
 					
