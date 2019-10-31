@@ -13,4 +13,4 @@ Hostname should be set to the IP where the Client and HostServer are located. Th
 
 Keyword can be set to any string to search the filepool for..
 
-To retrieve a file from a remote host, type retr <filename>/<owner's username> (minus the brackets). It should appear directly as it looks in the search field. 
+To retrieve a file from a remote host, type retr <filename/ownername> (minus the brackets). It should appear directly as it looks in the search field. 
