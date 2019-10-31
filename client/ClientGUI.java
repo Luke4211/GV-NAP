@@ -28,6 +28,7 @@ import java.io.*;
 import javax.swing.JTextArea;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import java.awt.SystemColor;
 
 public class ClientGUI implements ActionListener {
 
@@ -120,7 +121,6 @@ public class ClientGUI implements ActionListener {
 				String response = this.getMessage(this.clientIn);
 				String[] components = response.split("\\s+");
 				for(int i = 0; i < components.length; i += 3) {
-					//System.out.println(components[i] + '\n' + components[i+1].split("/")[0]);
 					this.fileMap.put(components[i], components[i+1]);
 				}
 				
@@ -135,21 +135,18 @@ public class ClientGUI implements ActionListener {
 		} else if(event.getSource() == this.btnSend) {
 			String[] componentStrings = this.cmdField.getText().split("/");
 			String fname = componentStrings[0].split(" ")[1];
-			System.out.println(fname);
-			if(this.fileMap.containsKey(fname + "/" + this.user)) {
+			String fnameOwner = this.cmdField.getText().split(" ")[1];
+			if(this.fileMap.containsKey(fnameOwner)) {
 				try {
-					
-					Socket newSock = new Socket(this.fileMap.get(this.cmdField.getText().split(" ")[1]), 10000);
+					System.out.println(fname);
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
 					InputStream Inp2p = newSock.getInputStream();
 					OutputStream Outp2p = newSock.getOutputStream();
 					
-					
-					//String[] componentStrings = this.cmdField.getText().split("/");
-					String send = componentStrings[0];
 					this.sendMessage(fname, Outp2p);
 					byte[] fbytes = this.getMessage(Inp2p).getBytes();
 					
-					FileOutputStream fout = new FileOutputStream(fname);
+					FileOutputStream fout = new FileOutputStream("2" + fname);
 					fout.write(fbytes, 0, fbytes.length);
 					fout.close();
 					newSock.close();
@@ -176,6 +173,7 @@ public class ClientGUI implements ActionListener {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		frame.getContentPane().setBackground(SystemColor.info);
 		frame.setBounds(100, 100, 571, 550);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);

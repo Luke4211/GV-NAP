@@ -62,7 +62,6 @@ public class HostServer {
         public void run() {
         		String request;
 				try {
-					System.out.println("We are here...");
 					request = this.getMessage();
 					File send = new File(request);
 					InputStream fin = new FileInputStream(send);
