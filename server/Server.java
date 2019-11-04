@@ -95,16 +95,24 @@ public class Server {
         	        	break;
         			case "disc":
         				connected = false;
-        				for(String file : this.clientFiles) {
-        					this.availableFiles.remove(file);
-        				}
+        				this.removeFiles();
         				this.socket.close();
         				System.out.println("Client " + this.userName + " has disconnected.");
         				
         				break;
         			
+        			case "reset":
+        				this.removeFiles();
+        				this.fetchFiles();
+        			
         		}
         	}
+        }
+        
+        private void removeFiles() {
+        	for(String file : this.clientFiles) {
+				this.availableFiles.remove(file);
+			}
         }
         
         //Returns a submap of the available files based on
@@ -129,8 +137,7 @@ public class Server {
         		this.availableFiles.put(s + "/" + this.userName, userData);
         		this.clientFiles.add(s + "/" + this.userName);
         		
-        	}
-    		
+        	}   		
     		
         }
         

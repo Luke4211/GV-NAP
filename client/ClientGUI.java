@@ -68,21 +68,30 @@ public class ClientGUI implements ActionListener {
 			//Send username, IP, and connection speed to host.
 			String hostInfo = username + ":" + clientHost + ":" + speed;
 			this.sendMessage(hostInfo, this.clientOut);
-			
-			//Read filenames into a string separated by
-			//<SEP>, and send to host.
-			File dir = new File(System.getProperty("user.dir"));
-			File[] files = dir.listFiles();
-			String fileStr = "";
-			
-			for (File f : files) {
-				fileStr += f.getName() + "<SEP>";
-			}
-			
-			this.sendMessage(fileStr, this.clientOut);
+					
+			this.sendFileData();
 			this.cntBtn.setEnabled(false);
 			this.dscBtn.setEnabled(true);
 			this.terminal.append(">>Connected.\n");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void sendFileData() {
+		
+		//Read filenames into a string separated by
+		//<SEP>, and send to host.
+		File dir = new File(System.getProperty("user.dir"));
+		File[] files = dir.listFiles();
+		String fileStr = "";
+		
+		for (File f : files) {
+			fileStr += f.getName() + "<SEP>";
+		}
+		
+		try {
+			this.sendMessage(fileStr, this.clientOut);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -110,7 +119,6 @@ public class ClientGUI implements ActionListener {
 		}
 	
 		fout.close();
-		
 	}
 	void sendMessage(String send, OutputStream out) throws Exception {
 		byte[] msg = send.getBytes();
@@ -148,7 +156,7 @@ public class ClientGUI implements ActionListener {
 				}
 				
 				//Clear the textbox, print labels and the query result.
-				String cols = String.format("%-35.35s %-15.15s %-10.10s\n", "Filename/Owner", "Hostname", "Speed");
+				String cols = String.format(" %-35.35s %-15.15s %-10.10s\n ", "Filename/Owner", "Hostname", "Speed");
 				this.searchArea.setText("");
 				this.searchArea.append(cols);
 				this.searchArea.append(response);
@@ -171,9 +179,11 @@ public class ClientGUI implements ActionListener {
 					//Send name of requested file to server.
 					this.sendMessage(fname, Outp2p);
 					this.getFile(Inp2p, fname);
-					this.terminal.append(">>Downloading " + fname + "\n");
+					this.terminal.append(">>Downloaded " + fname + ".\n");
 					Inp2p.close();
-					newSock.close();
+					newSock.close();				
+					this.sendMessage("reset", this.clientOut);
+					this.sendFileData();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
