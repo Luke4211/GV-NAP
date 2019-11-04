@@ -97,13 +97,20 @@ public class ClientGUI implements ActionListener {
 		return new String(msg);
     }
 	
-	private byte[] getByteMessage(InputStream in) throws Exception {
+	private void getFile(InputStream in, String fname) throws Exception {
 		byte[] msgLength = new byte[4];
 		in.read(msgLength, 0, 4);
 		int len = ByteBuffer.wrap(msgLength).getInt();
+		FileOutputStream fout = new FileOutputStream(fname);
 		byte[] msg = new byte[len];
-		in.read(msg, 0, len);
-		return msg;
+		int bCount;
+		while( (bCount = in.read(msg) ) > 0) {
+			fout.write(msg, 0, bCount);
+			
+		}
+	
+		fout.close();
+		
 	}
 	void sendMessage(String send, OutputStream out) throws Exception {
 		byte[] msg = send.getBytes();
@@ -157,24 +164,20 @@ public class ClientGUI implements ActionListener {
 				try {
 					
 					System.out.println(fname);
-					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
 					BufferedInputStream Inp2p = new BufferedInputStream(newSock.getInputStream());
 					OutputStream Outp2p = newSock.getOutputStream();
 					
 					//Send name of requested file to server.
 					this.sendMessage(fname, Outp2p);
-					byte[] fbytes = this.getByteMessage(Inp2p);
-					
-					FileOutputStream fout = new FileOutputStream(fname);
-					fout.write(fbytes, 0, fbytes.length);
-					//fout.flush();
-					//fout.close();
-					//newSock.close();
+					this.getFile(Inp2p, fname);
+					this.terminal.append(">>Downloading " + fname + "\n");
+					Inp2p.close();
+					newSock.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				
-				
+						
 			}
 		} else if(event.getSource() == this.dscBtn) {
 			try {

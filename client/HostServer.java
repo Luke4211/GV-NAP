@@ -27,10 +27,6 @@ public class HostServer {
         private InputStream serverIn;            
         private BufferedOutputStream serverOut;
 
-        
-
-
-        
         ClientHandler(Socket socket) throws Exception {
             this.socket = socket;
             this.serverIn = socket.getInputStream();
@@ -65,6 +61,7 @@ public class HostServer {
 					request = this.getMessage();
 					byte[] fbytes = Files.readAllBytes(Paths.get(request));
 					this.sendMessage(fbytes);
+					this.socket.close();
 				} catch (Exception e) {					
 					e.printStackTrace();
 				}
