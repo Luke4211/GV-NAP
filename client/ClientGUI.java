@@ -165,19 +165,21 @@ public class ClientGUI implements ActionListener {
 				
 			}
 		} else if(event.getSource() == this.btnSend) {
+			
 			String[] componentStrings = this.cmdField.getText().split("/");
 			String fname = componentStrings[0].split(" ")[1];
 			String fnameOwner = this.cmdField.getText().split(" ")[1];
 			if(this.fileMap.containsKey(fnameOwner)) {
 				try {
-					
-					System.out.println(fname);
-					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10001);
+					//Connect to HostServer
+					Socket newSock = new Socket(this.fileMap.get(fnameOwner), 10000);
 					BufferedInputStream Inp2p = new BufferedInputStream(newSock.getInputStream());
 					OutputStream Outp2p = newSock.getOutputStream();
 					
 					//Send name of requested file to server.
 					this.sendMessage(fname, Outp2p);
+					
+					//Read the server response data into new file.
 					this.getFile(Inp2p, fname);
 					this.terminal.append(">>Downloaded " + fname + ".\n");
 					Inp2p.close();

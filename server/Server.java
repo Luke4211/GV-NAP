@@ -109,11 +109,15 @@ public class Server {
         	}
         }
         
+        
         private void removeFiles() {
         	for(String file : this.clientFiles) {
 				this.availableFiles.remove(file);
+				
 			}
-        }
+        	
+        	this.clientFiles.removeAll(this.clientFiles);
+        	}
         
         //Returns a submap of the available files based on
         //a search term.
@@ -169,10 +173,6 @@ public class Server {
     		//Next write the message.
     		this.serverOut.write(msg, 0, msg.length);
     	}
-
-
-        
- 
     
     }
 }

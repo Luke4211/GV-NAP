@@ -22,6 +22,7 @@ public class HostServer {
     }
 
 
+    //Runnable class which handles each file request.
     private static class ClientHandler implements Runnable {
         private Socket socket;
         private InputStream serverIn;            
