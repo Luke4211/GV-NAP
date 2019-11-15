@@ -2,7 +2,9 @@ package client;
 
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.concurrent.ExecutorService;
@@ -10,15 +12,32 @@ import java.util.concurrent.Executors;
 
 
 public class HostServer {
-
+    private static int locSoc;
     public static void main(String[] args) {
-        try(ServerSocket listener = new ServerSocket(10000)) {
-            System.out.println("Server running");
-            ExecutorService threadPool = Executors.newFixedThreadPool(15);
-            while(true) {
-                threadPool.execute(new ClientHandler(listener.accept())); 
-            } 
-        } catch(Exception e){e.printStackTrace();}
+        if(args.length != 1){
+            try{
+                locSoc = 10000;
+                ServerSocket ss = new ServerSocket(locSoc);
+                ServerSocket listener = ss;
+                System.out.println("Centralized server running on default: " + ss.toString());
+                ExecutorService threadPool = Executors.newFixedThreadPool(15);
+                while(true) {
+                    threadPool.execute(new ClientHandler(listener.accept()));
+                }
+            } catch(Exception e){e.printStackTrace();}
+        }
+        else{
+            try{
+                locSoc = Integer.parseInt(args[0]);
+                ServerSocket ss = new ServerSocket(locSoc);
+                ServerSocket listener = ss;
+                System.out.println("Centralized server running on: " + ss.toString());
+                ExecutorService threadPool = Executors.newFixedThreadPool(15);
+                while(true) {
+                    threadPool.execute(new ClientHandler(listener.accept()));
+                }
+            } catch(Exception e){e.printStackTrace();}
+        }
     }
 
 
@@ -27,6 +46,8 @@ public class HostServer {
         private Socket socket;
         private InputStream serverIn;            
         private BufferedOutputStream serverOut;
+        private Path path= FileSystems.getDefault().getPath(".");
+        private File curDir = path.toFile();
 
         ClientHandler(Socket socket) throws Exception {
             this.socket = socket;
@@ -68,7 +89,22 @@ public class HostServer {
 				}
         	
         }
-        
-    
+        private File getCurDir(){
+            //search current
+            String name = "ftp_server.java";
+            File[] fileList = curDir.listFiles();
+            for(File f:fileList){
+                if(f.isDirectory()){
+                    File[] dir = f.listFiles();
+                    for (File target:dir){
+                        if (target.isFile() && target.getName().equalsIgnoreCase(name)) {
+//                        System.out.println("curDir: " + f); //testing
+                            return f;
+                        }
+                    }
+                }
+            }
+            return curDir;
+        }
     }
 }
