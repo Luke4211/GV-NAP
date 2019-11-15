@@ -21,7 +21,7 @@ public class Server {
 				ServerSocket listener = ss;
 				System.out.println("Centralized server running on default: " + ss.toString());
 				System.out.printf("------------------ Server Log ------------------\n" +
-						"DD-MM-YYYY HH:MM:SS -- [user] :: [socket info]");
+						"DD-MM-YYYY HH:MM:SS -- [user] :: [socket info]\n\n");
 				ExecutorService threadPool = Executors.newFixedThreadPool(15);
 				while(true) {
 					threadPool.execute(new ClientHandler(listener.accept(), availableFiles));
@@ -33,6 +33,8 @@ public class Server {
 				ServerSocket ss = new ServerSocket(Integer.parseInt(args[0]));
 				ServerSocket listener = ss;
 				System.out.println("Centralized server running on: " + ss.toString());
+				System.out.printf("------------------ Server Log ------------------\n" +
+						"DD-MM-YYYY HH:MM:SS -- [user] :: [socket info]\n\n");
 				ExecutorService threadPool = Executors.newFixedThreadPool(15);
 				while(true) {
 					threadPool.execute(new ClientHandler(listener.accept(), availableFiles));
