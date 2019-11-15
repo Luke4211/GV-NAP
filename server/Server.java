@@ -3,7 +3,9 @@ package server;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -13,13 +15,30 @@ import java.util.Map;
 public class Server {
 	private static ConcurrentNavigableMap<String, String[]> availableFiles = new ConcurrentSkipListMap<String, String[]>();
     public static void main(String[] args) {
-        try(ServerSocket listener = new ServerSocket(10500)) {
-            System.out.println("Server running");
-            ExecutorService threadPool = Executors.newFixedThreadPool(15);
-            while(true) {
-                threadPool.execute(new ClientHandler(listener.accept(), availableFiles)); 
-            } 
-        } catch(Exception e){e.printStackTrace();}
+    	if(args.length != 1){
+			try{
+				ServerSocket ss = new ServerSocket(10500);
+				ServerSocket listener = ss;
+				System.out.println("Centralized server running on default: " + ss.toString());
+				System.out.printf("------------------ Server Log ------------------\n" +
+						"DD-MM-YYYY HH:MM:SS -- [user] :: [socket info]");
+				ExecutorService threadPool = Executors.newFixedThreadPool(15);
+				while(true) {
+					threadPool.execute(new ClientHandler(listener.accept(), availableFiles));
+				}
+			} catch(Exception e){e.printStackTrace();}
+		}
+        else{
+			try{
+				ServerSocket ss = new ServerSocket(Integer.parseInt(args[0]));
+				ServerSocket listener = ss;
+				System.out.println("Centralized server running on: " + ss.toString());
+				ExecutorService threadPool = Executors.newFixedThreadPool(15);
+				while(true) {
+					threadPool.execute(new ClientHandler(listener.accept(), availableFiles));
+				}
+			} catch(Exception e){e.printStackTrace();}
+		}
     }
 
 
@@ -56,8 +75,11 @@ public class Server {
 	        		this.userName = attributes[0];
 	        		this.hostname = attributes[1];
 	        		this.speed = attributes[2];
-	        		System.out.println("Client " + this.userName + " has connected.");
-	        		this.fetchFiles();	 
+					Calendar calendar = Calendar.getInstance();
+					SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+	        		String sysTime = formatter.format(calendar.getTime());
+	        		System.out.printf("%s -- %s has connected :: %s\n", sysTime, this.userName, socket.toString());
+	        		this.fetchFiles();
 	        		this.listen();
 				} catch (Exception e) {					
 					e.printStackTrace();
@@ -97,8 +119,10 @@ public class Server {
         				connected = false;
         				this.removeFiles();
         				this.socket.close();
-        				System.out.println("Client " + this.userName + " has disconnected.");
-        				
+						Calendar calendar = Calendar.getInstance();
+						SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+						String sysTime = formatter.format(calendar.getTime());
+						System.out.printf("%s -- %s has disconnected :: %s\n", sysTime, this.userName, socket.toString());
         				break;
         			
         			case "reset":
